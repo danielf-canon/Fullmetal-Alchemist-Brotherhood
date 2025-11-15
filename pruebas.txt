@@ -1,0 +1,94 @@
+GET http://localhost:8000/alquimistas
+
+
+
+POST http://localhost:8000/alquimistas
+
+[
+  {
+    "nombre": "Edward Elric",
+    "edad": 15,
+    "especialidad": "Alquimia de acero",
+    "rango": "Estado"
+  },
+  {
+    "nombre": "Alphonse Elric",
+    "edad": 14,
+    "especialidad": "Alquimia de protección",
+    "rango": "Estado"
+  },
+  {
+  "nombre": "Roy Mustang",
+  "edad": 30,
+  "especialidad": "Alquimia de fuego",
+  "rango": "Coronel"
+}
+
+]
+
+GET http://localhost:8000/alquimista/2
+
+PUT http://localhost:8000/alquimista/1
+{
+  "nombre": "Edward Elric",
+  "edad": 16,
+  "especialidad": "Alquimia avanzada",
+  "rango": "Estado"
+}
+
+
+DELETE http://localhost:8000/alquimista/5
+
+
+GET http://localhost:8000/missions
+
+
+
+POST http://localhost:8000/missions
+
+[
+  {
+    "nombre": "Recuperar piedra filosofal",
+    "descripcion": "Buscar artefacto perdido en Ishval",
+    "alquimista_id": 1,
+    "estado": "pendiente"
+  },
+  {
+    "nombre": "Proteger laboratorio",
+    "descripcion": "Supervisar experimentos peligrosos",
+    "alquimista_id": 2,
+    "estado": "pendiente"
+  },
+{
+"nombre": "Controlar rebelión",
+"descripcion": "Detener levantamiento en Central",
+"alquimista_id": 3,
+"estado": "pendiente"
+}
+
+]
+
+
+GET http://localhost:8000/transmutations
+
+POST http://localhost:8000/transmutations
+
+{
+  "alquimista_id": 1,
+  "material_id": 1,
+  "costo": 150,
+  "resultado": "Plata refinada",
+  "estado": "pendiente"
+}
+
+
+
+
+GET http://localhost:8000/materials
+
+
+
+
+
+
+GET http://localhost:8000/auditorias

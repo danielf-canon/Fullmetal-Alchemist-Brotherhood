@@ -1,0 +1,30 @@
+# Node
+frontend/node_modules
+frontend/.next
+frontend/out
+
+# Go
+app
+bin
+*.exe
+*.log
+
+# General
+*.tmp
+*.cache
+.git
+.gitignore
+Dockerfile
+docker-compose.yaml
+
+# OS / OneDrive
+Thumbs.db
+Desktop.ini
+*.db
+*.zip
+*.rar
+OneDrive
+
+# IDE
+.vscode
+.idea

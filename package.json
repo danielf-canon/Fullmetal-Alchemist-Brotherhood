@@ -1,0 +1,10 @@
+{
+  "name": "definitivo",
+  "version": "1.0.0",
+  "scripts": {
+    "start:all": "concurrently \"docker compose up\" \"cd frontend && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}
