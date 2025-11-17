@@ -2,10 +2,10 @@ services:
   
   app:
     build: 
-      context: .
+      context: ./backend
     container_name: backend-alquimia
     env_file:
-      - ./.env
+      - ./backend/.env
     ports:
       - "8000:8000"
     depends_on:
@@ -17,9 +17,9 @@ services:
     restart: always
     container_name: backend-alquimia-db
     env_file:
-      - ./.env
+      - ./backend/.env
     healthcheck:
-      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d backend_alquimia"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,19 +27,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
-
-  frontend:
-    container_name: alquimia-frontend
-    build:
-      context: ./frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev
-    depends_on:
-      - app
-
+      
 volumes:
   postgres-data:

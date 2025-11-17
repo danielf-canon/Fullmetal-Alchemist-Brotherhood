@@ -6,7 +6,6 @@ RUN go mod download
 
 COPY . .
 
-# COMPILACIÓN ESTÁTICA (clave)
 ENV CGO_ENABLED=0
 RUN GOOS=linux GOARCH=amd64 go build -o main /app/main.go
 
