@@ -47,8 +47,6 @@ func (r *AuditoriaRepository) Save(a *models.Auditoria) (*models.Auditoria, erro
 	return a, nil
 }
 
-// Nota: Normalmente las auditorías NO se eliminan.
-// Lo dejamos por compatibilidad, pero puedes omitirlo si deseas.
 func (r *AuditoriaRepository) Delete(a *models.Auditoria) error {
 	return r.db.Delete(a).Error
 }

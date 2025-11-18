@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/rabbitmq/amqp091-go"
 )
 
-// ------------------ RUTAS ------------------
 
 func (s *Server) HandleTransmutation(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -20,8 +20,10 @@ func (s *Server) HandleTransmutation(w http.ResponseWriter, r *http.Request) {
 		s.handleGetAllTransmutations(w, r)
 		return
 	case http.MethodPost:
-		s.handleCreateTransmutation(w, r)
+		s.handleCreateTransmutation(w, r) 
 		return
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
@@ -36,10 +38,11 @@ func (s *Server) HandleTransmutationWithId(w http.ResponseWriter, r *http.Reques
 	case http.MethodDelete:
 		s.handleDeleteTransmutation(w, r)
 		return
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
-// ------------------ HANDLERS ------------------
 
 func (s *Server) handleGetAllTransmutations(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
@@ -66,6 +69,7 @@ func (s *Server) handleGetAllTransmutations(w http.ResponseWriter, r *http.Reque
 	s.logger.Info(http.StatusOK, r.URL.Path, start)
 }
 
+
 func (s *Server) handleGetTransmutationById(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	vars := mux.Vars(r)
@@ -82,7 +86,6 @@ func (s *Server) handleGetTransmutationById(w http.ResponseWriter, r *http.Reque
 			fmt.Errorf("transmutation with id %d not found", id))
 		return
 	}
-
 	if err != nil {
 		s.HandleError(w, http.StatusInternalServerError, r.URL.Path, err)
 		return
@@ -99,6 +102,9 @@ func (s *Server) handleGetTransmutationById(w http.ResponseWriter, r *http.Reque
 	s.logger.Info(http.StatusOK, r.URL.Path, start)
 }
 
+
+
+
 func (s *Server) handleCreateTransmutation(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	var dto api.TransmutationRequestDto
@@ -114,7 +120,7 @@ func (s *Server) handleCreateTransmutation(w http.ResponseWriter, r *http.Reques
 		MaterialID:   dto.MaterialID,
 		Costo:        dto.Costo,
 		Resultado:    dto.Resultado,
-		Estado:       dto.Estado,
+		Estado:       "Pendiente",
 	}
 
 	transmutation, err = s.TransmutationRepository.Save(transmutation)
@@ -123,23 +129,49 @@ func (s *Server) handleCreateTransmutation(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	result, err := json.Marshal(transmutation.ToTransmutationResponseDto())
+	body, _ := json.Marshal(transmutation)
+
+	err = s.MQ.Channel.Publish(
+		"",
+		s.MQ.Queue.Name,
+		false,
+		false,
+		amqp091.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
+
 	if err != nil {
-		s.HandleError(w, http.StatusInternalServerError, r.URL.Path, err)
+		s.HandleError(w, http.StatusInternalServerError, r.URL.Path,
+			fmt.Errorf("error enviando tarea a RabbitMQ: %v", err))
 		return
 	}
-	s.createAuditoria("system", "CREATE", "Transmutación",
-	fmt.Sprintf("Alquimista %d realizó transmutación con material %d. Resultado: %s",
-	transmutation.AlquimistaID, transmutation.MaterialID, transmutation.Resultado))
+
+	s.createAuditoria("system", "CREATE_ASYNC", "Transmutación",
+		fmt.Sprintf("Transmutación %d enviada al worker", transmutation.ID))
+
+	response := map[string]interface{}{
+		"status": "processing",
+		"id":     transmutation.ID,
+	}
+
+	out, _ := json.Marshal(response)
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(result)
-	s.logger.Info(http.StatusCreated, r.URL.Path, start)
+	w.WriteHeader(http.StatusAccepted)
+	w.Write(out)
+
+	s.logger.Info(http.StatusAccepted, r.URL.Path, start)
 }
+
+
+
 
 func (s *Server) handleEditTransmutation(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	var dto api.TransmutationRequestDto
+
 	err := json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		s.HandleError(w, http.StatusBadRequest, r.URL.Path, err)
@@ -159,7 +191,6 @@ func (s *Server) handleEditTransmutation(w http.ResponseWriter, r *http.Request)
 			fmt.Errorf("transmutation with id %d not found", id))
 		return
 	}
-
 	if err != nil {
 		s.HandleError(w, http.StatusInternalServerError, r.URL.Path, err)
 		return
@@ -182,17 +213,22 @@ func (s *Server) handleEditTransmutation(w http.ResponseWriter, r *http.Request)
 		s.HandleError(w, http.StatusInternalServerError, r.URL.Path, err)
 		return
 	}
+
 	s.createAuditoria("system", "UPDATE", "Transmutación",
-	fmt.Sprintf("Se actualizó la transmutación ID %d", transmutation.ID))
+		fmt.Sprintf("Se actualizó la transmutación ID %d", transmutation.ID))
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	w.Write(result)
 	s.logger.Info(http.StatusAccepted, r.URL.Path, start)
 }
 
+
+
 func (s *Server) handleDeleteTransmutation(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	vars := mux.Vars(r)
+
 	id, err := strconv.ParseInt(vars["id"], 10, 32)
 	if err != nil {
 		s.HandleError(w, http.StatusBadRequest, r.URL.Path, err)
@@ -205,7 +241,6 @@ func (s *Server) handleDeleteTransmutation(w http.ResponseWriter, r *http.Reques
 			fmt.Errorf("transmutation with id %d not found", id))
 		return
 	}
-
 	if err != nil {
 		s.HandleError(w, http.StatusInternalServerError, r.URL.Path, err)
 		return
@@ -216,8 +251,10 @@ func (s *Server) handleDeleteTransmutation(w http.ResponseWriter, r *http.Reques
 		s.HandleError(w, http.StatusInternalServerError, r.URL.Path, err)
 		return
 	}
+
 	s.createAuditoria("system", "DELETE", "Transmutación",
-	fmt.Sprintf("Se eliminó la transmutación ID %d", id))
+		fmt.Sprintf("Se eliminó la transmutación ID %d", id))
+
 	w.WriteHeader(http.StatusNoContent)
 	s.logger.Info(http.StatusNoContent, r.URL.Path, start)
 }

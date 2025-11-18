@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Manejo de rutas
 func (s *Server) HandleMaterial(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -33,7 +32,6 @@ func (s *Server) HandleMaterialWithId(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GET /materials
 func (s *Server) handleGetAllMaterials(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 
@@ -59,7 +57,6 @@ func (s *Server) handleGetAllMaterials(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info(http.StatusOK, r.URL.Path, start)
 }
 
-// GET /materials/{id}
 func (s *Server) handleGetMaterialById(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	vars := mux.Vars(r)
@@ -93,7 +90,6 @@ func (s *Server) handleGetMaterialById(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info(http.StatusOK, r.URL.Path, start)
 }
 
-// POST /materials
 func (s *Server) handleCreateMaterial(w http.ResponseWriter, r *http.Request) {
 	var dto api.MaterialRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)
@@ -124,7 +120,6 @@ func (s *Server) handleCreateMaterial(w http.ResponseWriter, r *http.Request) {
 	w.Write(result)
 }
 
-// PUT /materials/{id}
 func (s *Server) handleEditMaterial(w http.ResponseWriter, r *http.Request) {
 	var dto api.MaterialRequestDto
 	err := json.NewDecoder(r.Body).Decode(&dto)

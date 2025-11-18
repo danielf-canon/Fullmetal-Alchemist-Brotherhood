@@ -92,3 +92,14 @@ GET http://localhost:8000/materials
 
 
 GET http://localhost:8000/auditorias
+
+
+
+
+JSON transmutations
+
+{
+  "alquimista_id": 2,
+  "material_id": 1,
+  "costo": 200
+}
